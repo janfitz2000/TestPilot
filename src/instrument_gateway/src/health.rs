@@ -1,7 +1,6 @@
 use axum::{extract::State, response::Json};
 use serde_json::{json, Value};
 use std::time::SystemTime;
-use tracing::error;
 
 use crate::AppState;
 

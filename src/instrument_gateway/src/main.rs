@@ -108,7 +108,7 @@ async fn list_instruments(
 ) -> Result<Json<Vec<InstrumentResponse>>, StatusCode> {
     let manager = state.instrument_manager.read().await;
     let instruments: Vec<InstrumentResponse> = manager
-        .list_instruments()
+        .list_instruments().await
         .into_iter()
         .map(|instrument| InstrumentResponse {
             id: instrument.id,
@@ -128,8 +128,7 @@ async fn get_instrument(
     State(state): State<AppState>,
 ) -> Result<Json<InstrumentResponse>, StatusCode> {
     let manager = state.instrument_manager.read().await;
-    
-    if let Some(instrument) = manager.get_instrument(&id) {
+    if let Some(instrument) = manager.get_instrument(&id).await {
         Ok(Json(InstrumentResponse {
             id: instrument.id,
             name: instrument.name.clone(),
@@ -147,14 +146,12 @@ async fn create_instrument(
     State(state): State<AppState>,
     Json(payload): Json<CreateInstrumentRequest>,
 ) -> Result<Json<InstrumentResponse>, StatusCode> {
-    let mut manager = state.instrument_manager.write().await;
-    
+    let manager = state.instrument_manager.write().await;
     let instrument = Instrument::new(
         payload.name,
         payload.r#type,
         payload.address,
     );
-    
     let response = InstrumentResponse {
         id: instrument.id,
         name: instrument.name.clone(),
@@ -162,9 +159,7 @@ async fn create_instrument(
         address: instrument.address.clone(),
         status: "disconnected".to_string(),
     };
-    
-    manager.add_instrument(instrument);
-    
+    manager.add_instrument(instrument).await;
     Ok(Json(response))
 }
 
@@ -173,8 +168,7 @@ async fn connect_instrument(
     Path(id): Path<Uuid>,
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let mut manager = state.instrument_manager.write().await;
-    
+    let manager = state.instrument_manager.write().await;
     match manager.connect_instrument(&id).await {
         Ok(_) => Ok(Json(serde_json::json!({"status": "connected"}))),
         Err(e) => {
@@ -189,8 +183,7 @@ async fn disconnect_instrument(
     Path(id): Path<Uuid>,
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let mut manager = state.instrument_manager.write().await;
-    
+    let manager = state.instrument_manager.write().await;
     match manager.disconnect_instrument(&id).await {
         Ok(_) => Ok(Json(serde_json::json!({"status": "disconnected"}))),
         Err(e) => {
@@ -206,8 +199,7 @@ async fn send_command(
     State(state): State<AppState>,
     Json(payload): Json<CommandRequest>,
 ) -> Result<Json<CommandResponse>, StatusCode> {
-    let mut manager = state.instrument_manager.write().await;
-    
+    let manager = state.instrument_manager.write().await;
     match manager.send_command(&id, &payload.command).await {
         Ok(response) => Ok(Json(CommandResponse {
             response: Some(response),
