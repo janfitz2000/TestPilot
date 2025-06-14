@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: testpilot-postgres
+    environment:
+      POSTGRES_DB: test_automation
+      POSTGRES_USER: testpilot
+      POSTGRES_PASSWORD: testpilot_dev
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - testpilot-network
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: testpilot-timescaledb
+    environment:
+      POSTGRES_DB: timeseries
+      POSTGRES_USER: testpilot
+      POSTGRES_PASSWORD: testpilot_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - testpilot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: testpilot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - testpilot-network
+
+  # Message Queue
+  nats:
+    image: nats:2.10-alpine
+    container_name: testpilot-nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-m", "8222"]
+    networks:
+      - testpilot-network
+
+  # Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: testpilot-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - testpilot-network
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: testpilot-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - testpilot-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: testpilot-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - testpilot-network
+
+  # Simple AI service using Python
+  ai-service:
+    image: python:3.11-slim
+    container_name: testpilot-ai-service
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://testpilot:testpilot_dev@postgres:5432/test_automation
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+    volumes:
+      - ./src/ai_orchestrator:/app
+      - ./requirements.txt:/app/requirements.txt
+    working_dir: /app
+    command: >
+      bash -c "
+        pip install -r requirements.txt &&
+        python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    depends_on:
+      - postgres
+      - redis
+      - nats
+      - qdrant
+    networks:
+      - testpilot-network
+
+  # Mock Instrument Gateway using Python
+  instrument-service:
+    image: python:3.11-slim
+    container_name: testpilot-instrument-service
+    ports:
+      - "8002:8000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+    volumes:
+      - ./src/instrument_gateway_py:/app
+      - ./requirements.txt:/app/requirements.txt
+    working_dir: /app
+    command: >
+      bash -c "
+        pip install fastapi uvicorn &&
+        python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    depends_on:
+      - redis
+      - nats
+    networks:
+      - testpilot-network
+
+  # Simple Web Interface using nginx
+  web-interface:
+    image: nginx:alpine
+    container_name: testpilot-web
+    ports:
+      - "3000:80"
+    volumes:
+      - ./web-static:/usr/share/nginx/html
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - ai-service
+      - instrument-service
+    networks:
+      - testpilot-network
+
+volumes:
+  postgres_data:
+  timescaledb_data:
+  redis_data:
+  qdrant_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  testpilot-network:
+    driver: bridge

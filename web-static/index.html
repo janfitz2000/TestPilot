@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestPilot - AI Test Automation Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-gray-800 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="activity" class="w-8 h-8 text-blue-500"></i>
+                <h1 class="text-xl font-bold">TestPilot</h1>
+            </div>
+            <div class="flex space-x-4">
+                <button onclick="showDashboard()" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">Dashboard</button>
+                <button onclick="showInstruments()" class="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700">Instruments</button>
+                <button onclick="showTests()" class="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700">Tests</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-6">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view">
+            <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+            
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <i data-lucide="cpu" class="w-8 h-8 text-blue-600 mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold" id="instrument-count">0</div>
+                            <div class="text-gray-500">Instruments</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <i data-lucide="activity" class="w-8 h-8 text-green-600 mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold">0</div>
+                            <div class="text-gray-500">Active Tests</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <i data-lucide="check-circle" class="w-8 h-8 text-purple-600 mr-4"></i>
+                        <div>
+                            <div class="text-2xl font-bold">0</div>
+                            <div class="text-gray-500">Completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">System Status</h3>
+                <div class="space-y-3" id="system-status">
+                    <div class="flex justify-between items-center">
+                        <span>AI Orchestrator</span>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-sm" id="ai-status">Checking...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Instrument Gateway</span>
+                        <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-sm" id="instrument-status">Checking...</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Database</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">Healthy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instruments View -->
+        <div id="instruments-view" class="view hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Instruments</h2>
+                <button onclick="refreshInstruments()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="instruments-grid">
+                <!-- Instruments will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Tests View -->
+        <div id="tests-view" class="view hidden">
+            <h2 class="text-2xl font-bold mb-6">Test Execution</h2>
+            
+            <!-- AI Test Generation -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 class="text-lg font-semibold mb-4">AI Test Generation</h3>
+                <div class="space-y-4">
+                    <textarea 
+                        id="test-description" 
+                        class="w-full p-3 border rounded-lg" 
+                        rows="3" 
+                        placeholder="Describe your test in natural language, e.g., 'Test the power amplifier at 1GHz with 10dBm input and measure the output power and distortion'">
+                    </textarea>
+                    <button onclick="generateTest()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                        <i data-lucide="brain" class="w-4 h-4 inline mr-2"></i>
+                        Generate Test Plan
+                    </button>
+                </div>
+                <div id="generated-test" class="mt-4 hidden">
+                    <h4 class="font-semibold">Generated Test Plan:</h4>
+                    <div class="bg-gray-50 p-3 rounded mt-2" id="test-plan-content"></div>
+                </div>
+            </div>
+
+            <!-- Manual Commands -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Manual SCPI Commands</h3>
+                <div class="space-y-4">
+                    <select id="selected-instrument" class="w-full p-2 border rounded">
+                        <option value="">Select an instrument...</option>
+                    </select>
+                    <input 
+                        type="text" 
+                        id="scpi-command" 
+                        class="w-full p-2 border rounded" 
+                        placeholder="Enter SCPI command (e.g., *IDN?)"
+                    >
+                    <button onclick="sendCommand()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                        Send Command
+                    </button>
+                    <div id="command-response" class="mt-4 p-3 bg-gray-50 rounded hidden">
+                        <strong>Response:</strong>
+                        <pre id="response-text" class="mt-2 text-sm"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let instruments = [];
+        
+        // Initialize icons
+        lucide.createIcons();
+
+        // View management
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            // Update nav buttons
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-gray-600');
+            });
+        }
+
+        function showDashboard() {
+            showView('dashboard-view');
+            event.target.classList.add('bg-blue-600');
+            event.target.classList.remove('bg-gray-600');
+            loadDashboard();
+        }
+
+        function showInstruments() {
+            showView('instruments-view');
+            event.target.classList.add('bg-blue-600');
+            event.target.classList.remove('bg-gray-600');
+            loadInstruments();
+        }
+
+        function showTests() {
+            showView('tests-view');
+            event.target.classList.add('bg-blue-600');
+            event.target.classList.remove('bg-gray-600');
+            loadTestsView();
+        }
+
+        // API calls
+        async function checkServiceHealth(service, url) {
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    return 'healthy';
+                }
+                return 'unhealthy';
+            } catch (error) {
+                return 'offline';
+            }
+        }
+
+        async function loadDashboard() {
+            // Check service health
+            const aiStatus = await checkServiceHealth('ai', 'http://localhost:8001/health');
+            const instrumentStatus = await checkServiceHealth('instrument', 'http://localhost:8002/health');
+            
+            document.getElementById('ai-status').textContent = aiStatus;
+            document.getElementById('ai-status').className = `px-2 py-1 rounded text-sm ${
+                aiStatus === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`;
+            
+            document.getElementById('instrument-status').textContent = instrumentStatus;
+            document.getElementById('instrument-status').className = `px-2 py-1 rounded text-sm ${
+                instrumentStatus === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`;
+
+            // Load instrument count
+            await loadInstruments();
+            document.getElementById('instrument-count').textContent = instruments.length;
+        }
+
+        async function loadInstruments() {
+            try {
+                const response = await fetch('http://localhost:8002/instruments');
+                if (response.ok) {
+                    instruments = await response.json();
+                    renderInstruments();
+                    updateInstrumentSelect();
+                } else {
+                    console.error('Failed to load instruments');
+                }
+            } catch (error) {
+                console.error('Error loading instruments:', error);
+            }
+        }
+
+        function renderInstruments() {
+            const grid = document.getElementById('instruments-grid');
+            grid.innerHTML = '';
+
+            instruments.forEach(instrument => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-lg shadow p-6';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <i data-lucide="cpu" class="w-8 h-8 text-gray-600"></i>
+                        <span class="w-6 h-6 rounded-full ${instrument.connected ? 'bg-green-500' : 'bg-red-500'}"></span>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">${instrument.name}</h3>
+                    <div class="space-y-1 text-sm text-gray-600 mb-4">
+                        <div>Type: ${instrument.type}</div>
+                        <div>Address: ${instrument.address}</div>
+                        <div>Status: ${instrument.connected ? 'Connected' : 'Disconnected'}</div>
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="toggleConnection('${instrument.id}')" 
+                                class="px-3 py-1 rounded text-sm ${instrument.connected ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                            ${instrument.connected ? 'Disconnect' : 'Connect'}
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            // Recreate icons
+            lucide.createIcons();
+        }
+
+        async function toggleConnection(instrumentId) {
+            const instrument = instruments.find(i => i.id === instrumentId);
+            const action = instrument.connected ? 'disconnect' : 'connect';
+            
+            try {
+                const response = await fetch(`http://localhost:8002/instruments/${instrumentId}/${action}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    await loadInstruments();
+                } else {
+                    alert(`Failed to ${action} instrument`);
+                }
+            } catch (error) {
+                console.error(`Error ${action}ing instrument:`, error);
+                alert(`Error ${action}ing instrument`);
+            }
+        }
+
+        function updateInstrumentSelect() {
+            const select = document.getElementById('selected-instrument');
+            select.innerHTML = '<option value="">Select an instrument...</option>';
+            
+            instruments.filter(i => i.connected).forEach(instrument => {
+                const option = document.createElement('option');
+                option.value = instrument.id;
+                option.textContent = instrument.name;
+                select.appendChild(option);
+            });
+        }
+
+        function loadTestsView() {
+            updateInstrumentSelect();
+        }
+
+        async function generateTest() {
+            const description = document.getElementById('test-description').value;
+            if (!description) {
+                alert('Please enter a test description');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8001/api/v1/ai/generate-test-plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        description: description,
+                        instruments: instruments.filter(i => i.connected).map(i => i.type)
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('test-plan-content').textContent = JSON.stringify(result.test_plan, null, 2);
+                    document.getElementById('generated-test').classList.remove('hidden');
+                } else {
+                    alert('Failed to generate test plan');
+                }
+            } catch (error) {
+                console.error('Error generating test:', error);
+                alert('Error generating test plan');
+            }
+        }
+
+        async function sendCommand() {
+            const instrumentId = document.getElementById('selected-instrument').value;
+            const command = document.getElementById('scpi-command').value;
+            
+            if (!instrumentId || !command) {
+                alert('Please select an instrument and enter a command');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8002/instruments/${instrumentId}/command`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        command: command
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('response-text').textContent = result.response || result.error || 'No response';
+                    document.getElementById('command-response').classList.remove('hidden');
+                } else {
+                    alert('Failed to send command');
+                }
+            } catch (error) {
+                console.error('Error sending command:', error);
+                alert('Error sending command');
+            }
+        }
+
+        function refreshInstruments() {
+            loadInstruments();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+        });
+    </script>
+</body>
+</html>

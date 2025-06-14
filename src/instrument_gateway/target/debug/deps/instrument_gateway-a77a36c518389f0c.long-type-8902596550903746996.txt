@@ -1,0 +1,2 @@
+fn(axum::extract::Path<Uuid>, axum::extract::State<AppState>) -> impl futures::Future<Output = Result<axum::Json<serde_json::Value>, axum::http::StatusCode>> {connect_instrument}
+fn(axum::extract::Path<Uuid>, axum::extract::State<AppState>) -> impl futures::Future<Output = Result<axum::Json<serde_json::Value>, axum::http::StatusCode>> {connect_instrument}: Handler<_, _>

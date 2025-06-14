@@ -1,0 +1,229 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: testpilot-postgres
+    environment:
+      POSTGRES_DB: test_automation
+      POSTGRES_USER: testpilot
+      POSTGRES_PASSWORD: testpilot_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - testpilot-network
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: testpilot-timescaledb
+    environment:
+      POSTGRES_DB: timeseries
+      POSTGRES_USER: testpilot
+      POSTGRES_PASSWORD: testpilot_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - testpilot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: testpilot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - testpilot-network
+
+  # Message Queue
+  nats:
+    image: nats:2.10-alpine
+    container_name: testpilot-nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-js", "-m", "8222"]
+    networks:
+      - testpilot-network
+
+  # Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: testpilot-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - testpilot-network
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: testpilot-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - testpilot-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: testpilot-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana:/etc/grafana/provisioning
+    networks:
+      - testpilot-network
+
+  # AI Orchestrator Service
+  ai-orchestrator:
+    build:
+      context: .
+      dockerfile: docker/ai_orchestrator/Dockerfile
+    container_name: testpilot-ai-orchestrator
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://testpilot:testpilot_dev@postgres:5432/test_automation
+      TIMESCALE_URL: postgresql://testpilot:testpilot_dev@timescaledb:5432/timeseries
+      REDIS_URL: redis://redis:6379
+      NATS_URL: nats://nats:4222
+      VECTOR_STORE_URL: http://qdrant:6333
+    volumes:
+      - ./src/ai_orchestrator:/app
+      - ./config:/app/config
+    depends_on:
+      - postgres
+      - timescaledb
+      - redis
+      - nats
+      - qdrant
+    networks:
+      - testpilot-network
+    develop:
+      watch:
+        - action: sync
+          path: ./src/ai_orchestrator
+          target: /app
+
+  # Instrument Gateway Service
+  instrument-gateway:
+    build:
+      context: .
+      dockerfile: docker/instrument_gateway/Dockerfile
+    container_name: testpilot-instrument-gateway
+    ports:
+      - "8002:8000"
+    environment:
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./src/instrument_gateway:/app
+      - ./config:/app/config
+    depends_on:
+      - nats
+      - redis
+    networks:
+      - testpilot-network
+    develop:
+      watch:
+        - action: sync
+          path: ./src/instrument_gateway
+          target: /app
+
+  # Workflow Engine Service
+  workflow-engine:
+    build:
+      context: .
+      dockerfile: docker/workflow_engine/Dockerfile
+    container_name: testpilot-workflow-engine
+    ports:
+      - "8003:8000"
+    environment:
+      DATABASE_URL: postgresql://testpilot:testpilot_dev@postgres:5432/test_automation
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./src/workflow_engine:/app
+      - ./config:/app/config
+    depends_on:
+      - postgres
+      - nats
+      - redis
+    networks:
+      - testpilot-network
+    develop:
+      watch:
+        - action: sync
+          path: ./src/workflow_engine
+          target: /app
+
+  # Data Pipeline Service
+  data-pipeline:
+    build:
+      context: .
+      dockerfile: docker/data_pipeline/Dockerfile
+    container_name: testpilot-data-pipeline
+    ports:
+      - "8004:8000"
+    environment:
+      TIMESCALE_URL: postgresql://testpilot:testpilot_dev@timescaledb:5432/timeseries
+      NATS_URL: nats://nats:4222
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./src/data_pipeline:/app
+      - ./config:/app/config
+    depends_on:
+      - timescaledb
+      - nats
+      - redis
+    networks:
+      - testpilot-network
+    develop:
+      watch:
+        - action: sync
+          path: ./src/data_pipeline
+          target: /app
+
+  # Static Web Interface
+  web-static:
+    build:
+      context: .
+      dockerfile: docker/web_static/Dockerfile
+    container_name: testpilot-web-static
+    ports:
+      - "3000:80"
+    networks:
+      - testpilot-network
+
+volumes:
+  postgres_data:
+  timescaledb_data:
+  redis_data:
+  qdrant_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  testpilot-network:
+    driver: bridge
