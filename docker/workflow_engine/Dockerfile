@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt requirements-dev.txt ./
+COPY src/workflow_engine/requirements.txt requirements-dev.txt ./
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt

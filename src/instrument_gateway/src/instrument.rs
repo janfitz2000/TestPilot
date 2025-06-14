@@ -1,10 +1,8 @@
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use tokio::time::{timeout, Duration};
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 use crate::scpi::ScpiClient;
@@ -36,36 +34,33 @@ impl Instrument {
 
 #[derive(Clone)]
 pub struct InstrumentManager {
-    instruments: Arc<Mutex<HashMap<Uuid, Instrument>>>,
-    connections: Arc<Mutex<HashMap<Uuid, Box<dyn InstrumentConnection>>>>,
+    pub instruments: HashMap<Uuid, Instrument>,
+    pub connections: HashMap<Uuid, Box<dyn InstrumentConnection>>,
 }
 
 impl InstrumentManager {
     pub fn new() -> Self {
         Self {
-            instruments: Arc::new(Mutex::new(HashMap::new())),
-            connections: Arc::new(Mutex::new(HashMap::new())),
+            instruments: HashMap::new(),
+            connections: HashMap::new(),
         }
     }
 
-    pub async fn add_instrument(&self, instrument: Instrument) {
+    pub fn add_instrument(&mut self, instrument: Instrument) {
         info!("Adding instrument: {} ({})", instrument.name, instrument.id);
-        self.instruments.lock().await.insert(instrument.id, instrument);
+        self.instruments.insert(instrument.id, instrument);
     }
 
-    pub async fn get_instrument(&self, id: &Uuid) -> Option<Instrument> {
-        self.instruments.lock().await.get(id).cloned()
+    pub fn get_instrument(&self, id: &Uuid) -> Option<Instrument> {
+        self.instruments.get(id).cloned()
     }
 
-    pub async fn list_instruments(&self) -> Vec<Instrument> {
-        self.instruments.lock().await.values().cloned().collect()
+    pub fn list_instruments(&self) -> Vec<Instrument> {
+        self.instruments.values().cloned().collect()
     }
 
-    pub async fn connect_instrument(&self, id: &Uuid) -> Result<()> {
-        let mut instruments = self.instruments.lock().await;
-        let mut connections = self.connections.lock().await;
-        
-        let instrument = instruments.get_mut(id)
+    pub async fn connect_instrument(&mut self, id: &Uuid) -> Result<()> {
+        let instrument = self.instruments.get_mut(id)
             .ok_or_else(|| anyhow!("Instrument not found"))?;
 
         if instrument.is_connected {
@@ -75,7 +70,7 @@ impl InstrumentManager {
         info!("Connecting to instrument: {}", instrument.name);
 
         // Create connection based on protocol
-        let connection: Box<dyn InstrumentConnection> = match instrument.protocol.as_str() {
+        let mut connection: Box<dyn InstrumentConnection> = match instrument.protocol.as_str() {
             "SCPI" => Box::new(ScpiClient::new(&instrument.address)?),
             _ => return Err(anyhow!("Unsupported protocol: {}", instrument.protocol)),
         };
@@ -84,7 +79,7 @@ impl InstrumentManager {
         match timeout(Duration::from_secs(5), connection.connect()).await {
             Ok(Ok(_)) => {
                 instrument.is_connected = true;
-                connections.insert(*id, connection);
+                self.connections.insert(*id, connection);
                 info!("Successfully connected to instrument: {}", instrument.name);
                 Ok(())
             }
@@ -99,11 +94,8 @@ impl InstrumentManager {
         }
     }
 
-    pub async fn disconnect_instrument(&self, id: &Uuid) -> Result<()> {
-        let mut instruments = self.instruments.lock().await;
-        let mut connections = self.connections.lock().await;
-
-        let instrument = instruments.get_mut(id)
+    pub async fn disconnect_instrument(&mut self, id: &Uuid) -> Result<()> {
+        let instrument = self.instruments.get_mut(id)
             .ok_or_else(|| anyhow!("Instrument not found"))?;
 
         if !instrument.is_connected {
@@ -112,7 +104,7 @@ impl InstrumentManager {
 
         info!("Disconnecting instrument: {}", instrument.name);
 
-        if let Some(connection) = connections.remove(id) {
+        if let Some(mut connection) = self.connections.remove(id) {
             if let Err(e) = connection.disconnect().await {
                 warn!("Error during disconnect: {}", e);
             }
@@ -123,18 +115,15 @@ impl InstrumentManager {
         Ok(())
     }
 
-    pub async fn send_command(&self, id: &Uuid, command: &str) -> Result<String> {
-        let instruments = self.instruments.lock().await;
-        let mut connections = self.connections.lock().await;
-
-        let instrument = instruments.get(id)
+    pub async fn send_command(&mut self, id: &Uuid, command: &str) -> Result<String> {
+        let instrument = self.instruments.get(id)
             .ok_or_else(|| anyhow!("Instrument not found"))?;
 
         if !instrument.is_connected {
             return Err(anyhow!("Instrument not connected"));
         }
 
-        let connection = connections.get_mut(id)
+        let connection = self.connections.get_mut(id)
             .ok_or_else(|| anyhow!("No active connection"))?;
 
         info!("Sending command to {}: {}", instrument.name, command);

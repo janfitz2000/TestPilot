@@ -1,4 +1,4 @@
-# AI Orchestrator requirements
+# Workflow Engine requirements
 fastapi>=0.100.0
 uvicorn[standard]>=0.24.0
 pydantic>=2.5.0
@@ -9,12 +9,6 @@ alembic>=1.13.0
 redis[hiredis]>=5.0.0
 aioredis>=2.0.0
 nats-py>=2.0.0
-langchain>=0.1.0
-langchain-openai>=0.1.0
-langchain-community>=0.2.0
-openai>=1.30.0
-anthropic>=0.25.0
-qdrant-client>=1.7.0
 cryptography>=41.0.0
 pyjwt[crypto]>=2.8.0
 bcrypt>=4.1.0

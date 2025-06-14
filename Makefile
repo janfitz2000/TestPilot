@@ -9,9 +9,9 @@ help:
 	@echo "  lint             - Run linting"
 	@echo "  clean            - Clean build artifacts"
 	@echo "  docker-build     - Build Docker images"
-	@echo "  docker-up        - Start development environment"
+	@echo "  docker-up        - Start development environment (React UI on :3000)"
 	@echo "  docker-down      - Stop development environment"
-	@echo "  db-migrate       - Run database migrations"
+	@echo "  db-init          - Initialize databases (not migrations)"
 	@echo "  logs             - Show container logs"
 
 # Setup development environment
@@ -59,7 +59,7 @@ docker-up:
 	@echo "Starting development environment..."
 	docker-compose -f docker-compose.dev.yml up -d
 	@echo "Environment started! Services available at:"
-	@echo "  Web Interface: http://localhost:3000"
+	@echo "  Web Interface (React): http://localhost:3000"
 	@echo "  AI Orchestrator: http://localhost:8001"
 	@echo "  Instrument Gateway: http://localhost:8002"
 	@echo "  Workflow Engine: http://localhost:8003"
@@ -72,9 +72,9 @@ docker-down:
 	@echo "Stopping development environment..."
 	docker-compose -f docker-compose.dev.yml down
 
-# Database migrations
-db-migrate:
-	@echo "Running database migrations..."
+# Database initialization
+db-init:
+	@echo "Initializing databases..."
 	docker-compose -f docker-compose.dev.yml exec postgres createdb -U testpilot test_automation || true
 	docker-compose -f docker-compose.dev.yml exec timescaledb createdb -U testpilot timeseries || true
 

@@ -140,9 +140,9 @@ class AIClient:
             logger.error(f"OpenAI API call failed: {e}")
             raise
     
-    def _parse_test_plan_response(self, response_text: str) -> Dict[str, Any]:
+    def _parse_test_plan_response(self, response: str) -> Dict[str, Any]:
         """Parse AI response into structured test plan"""
-        # This is a simplified parser - in reality, you'd want more sophisticated parsing
+        # TODO: This is a simplistic placeholder. Implement robust parsing for AI-driven test plans.
         return {
             "objectives": ["Verify device functionality"],
             "instruments": ["Oscilloscope", "Signal Generator"],
@@ -154,7 +154,7 @@ class AIClient:
             ],
             "expected_results": "All measurements within specification",
             "pass_criteria": "< 5% deviation from nominal values",
-            "raw_response": response_text
+            "raw_response": response
         }
     
     def _generate_mock_test_plan(self, description: str, instruments: Optional[List[str]] = None) -> Dict[str, Any]:

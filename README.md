@@ -57,6 +57,34 @@ TestPilot is a hybrid (self-hosted and cloud) AI test automation platform that o
 - **Qdrant**: Vector database for AI document retrieval
 - **Prometheus/Grafana**: Monitoring and observability
 
+## 🧭 Project Stacks: UIs & Instrument Gateways
+
+TestPilot provides two alternative stacks for development and demonstration:
+
+- **Full Stack (default, docker-compose.dev.yml):**
+  - **Web Interface:** Full-featured React/TypeScript app (http://localhost:3000)
+  - **Instrument Gateway:** High-performance Rust service (http://localhost:8002)
+- **Simple Stack (docker-compose.simple.yml):**
+  - **Web Interface:** Simple static HTML/JS app (http://localhost:3000)
+  - **Instrument Gateway:** Python mock service (http://localhost:8002)
+
+> **Note:** The default `make docker-up` uses the full stack. To use the simple stack, run:
+> ```bash
+> docker-compose -f docker-compose.simple.yml up
+> ```
+
+### Why Two UIs and Two Gateways?
+- The **React UI** is the main interface for development and production.
+- The **static UI** is for quick demos or environments without Node.js.
+- The **Rust gateway** is for real instrument control and performance.
+- The **Python gateway** is a mock for development or environments without Rust.
+
+### Port Differences
+- The simple stack maps Postgres to port 5434 (not 5432). Update your connection strings if switching between stacks.
+
+### React Proxy Limitation
+- The React app's `proxy` setting only supports forwarding to one backend (AI Orchestrator at :8001). For calls to other services (e.g., Instrument Gateway), use full URLs or set up a custom proxy.
+
 ## 🔧 Development
 
 ### Common Commands

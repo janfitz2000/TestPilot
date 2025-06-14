@@ -24,7 +24,6 @@ base64ct = "=1.7.3"
 
 # SCPI/VISA communication
 tokio-serial = "5.4"
-visa-rs = { version = "0.1", optional = true }
 
 # Configuration
 config = "0.13"
@@ -33,7 +32,6 @@ async-trait = "0.1"
 
 [features]
 default = []
-visa = ["visa-rs"]
 
 [workspace]
 resolver = "2"

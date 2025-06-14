@@ -32,92 +32,55 @@ impl ScpiClient {
             stream: None,
         })
     }
+
+    pub async fn ensure_connected(&mut self) -> Result<()> {
+        if self.stream.is_none() {
+            let addr = format!("{}:{}", self.address, self.port);
+            let stream = timeout(Duration::from_secs(5), TcpStream::connect(&addr)).await??;
+            self.stream = Some(stream);
+        }
+        Ok(())
+    }
 }
 
 #[async_trait::async_trait]
 impl InstrumentConnection for ScpiClient {
     async fn connect(&self) -> Result<()> {
-        let addr = format!("{}:{}", self.address, self.port);
-        info!("Connecting to SCPI instrument at {}", addr);
-        
-        // This is a simplified connection test
-        // In reality, you'd store the connection for reuse
-        match timeout(Duration::from_secs(5), TcpStream::connect(&addr)).await {
-            Ok(Ok(_stream)) => {
-                info!("Successfully connected to {}", addr);
-                Ok(())
-            }
-            Ok(Err(e)) => {
-                error!("Failed to connect to {}: {}", addr, e);
-                Err(anyhow!("Connection failed: {}", e))
-            }
-            Err(_) => {
-                error!("Connection timeout to {}", addr);
-                Err(anyhow!("Connection timeout"))
-            }
-        }
+        // No-op: connection is managed in ensure_connected
+        Ok(())
     }
 
     async fn disconnect(&self) -> Result<()> {
-        info!("Disconnecting from SCPI instrument");
-        // Stream will be automatically closed when dropped
+        // Drop the stream to disconnect
+        // (In practice, you may want to implement a close method)
         Ok(())
     }
 
     async fn send_command(&mut self, command: &str) -> Result<String> {
-        let addr = format!("{}:{}", self.address, self.port);
-        debug!("Sending SCPI command to {}: {}", addr, command);
-
-        // Create new connection for each command (simplified approach)
-        let mut stream = match timeout(Duration::from_secs(5), TcpStream::connect(&addr)).await {
-            Ok(Ok(stream)) => stream,
-            Ok(Err(e)) => return Err(anyhow!("Failed to connect: {}", e)),
-            Err(_) => return Err(anyhow!("Connection timeout")),
-        };
-
-        // Send command
+        self.ensure_connected().await?;
+        let stream = self.stream.as_mut().ok_or_else(|| anyhow!("Not connected"))?;
         let command_with_terminator = if command.ends_with('\n') {
             command.to_string()
         } else {
             format!("{}\n", command)
         };
-
-        if let Err(e) = stream.write_all(command_with_terminator.as_bytes()).await {
-            return Err(anyhow!("Failed to send command: {}", e));
-        }
-
-        // Read response if it's a query (ends with ?)
+        stream.write_all(command_with_terminator.as_bytes()).await?;
         if command.trim().ends_with('?') {
             let mut buffer = Vec::new();
             let mut temp_buffer = [0; 1024];
-
-            // Read response with timeout
-            match timeout(Duration::from_secs(5), async {
-                loop {
-                    match stream.read(&mut temp_buffer).await {
-                        Ok(0) => break, // Connection closed
-                        Ok(n) => {
-                            buffer.extend_from_slice(&temp_buffer[..n]);
-                            // Check if we have a complete response (ends with newline)
-                            if buffer.ends_with(b"\n") {
-                                break;
-                            }
-                        }
-                        Err(e) => return Err(anyhow!("Read error: {}", e)),
-                    }
+            loop {
+                let n = stream.read(&mut temp_buffer).await?;
+                if n == 0 {
+                    break;
                 }
-                Ok::<(), anyhow::Error>(())
-            }).await {
-                Ok(Ok(_)) => {
-                    let response = String::from_utf8_lossy(&buffer).trim().to_string();
-                    debug!("SCPI response: {}", response);
-                    Ok(response)
+                buffer.extend_from_slice(&temp_buffer[..n]);
+                if buffer.ends_with(b"\n") {
+                    break;
                 }
-                Ok(Err(e)) => Err(e),
-                Err(_) => Err(anyhow!("Response timeout")),
             }
+            let response = String::from_utf8_lossy(&buffer).trim().to_string();
+            Ok(response)
         } else {
-            // Command without response
             Ok("OK".to_string())
         }
     }
