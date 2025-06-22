@@ -1,8 +1,0 @@
-/Users/janfitzgibbon/Documents/TestPilot/src/instrument_gateway/target/debug/deps/block_buffer-e4399bb4df5a17f0.d: /Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/lib.rs /Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/sealed.rs
-
-/Users/janfitzgibbon/Documents/TestPilot/src/instrument_gateway/target/debug/deps/libblock_buffer-e4399bb4df5a17f0.rlib: /Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/lib.rs /Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/sealed.rs
-
-/Users/janfitzgibbon/Documents/TestPilot/src/instrument_gateway/target/debug/deps/libblock_buffer-e4399bb4df5a17f0.rmeta: /Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/lib.rs /Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/sealed.rs
-
-/Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/lib.rs:
-/Users/janfitzgibbon/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/block-buffer-0.10.4/src/sealed.rs:

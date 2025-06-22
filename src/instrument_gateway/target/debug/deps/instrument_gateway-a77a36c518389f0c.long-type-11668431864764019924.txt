@@ -1,2 +1,0 @@
-fn(axum::extract::Path<Uuid>, axum::extract::State<AppState>, axum::Json<CommandRequest>) -> impl futures::Future<Output = Result<axum::Json<CommandResponse>, axum::http::StatusCode>> {send_command}
-fn(axum::extract::Path<Uuid>, axum::extract::State<AppState>, axum::Json<CommandRequest>) -> impl futures::Future<Output = Result<axum::Json<CommandResponse>, axum::http::StatusCode>> {send_command}: Handler<_, _>
