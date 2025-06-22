@@ -23,9 +23,13 @@ venv/
 
 # Node.js
 node_modules/
+web_interface/build/
+web_interface/dist/
+web_interface/react.log
 
 # Logs
 *.log
+logs/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
@@ -38,6 +42,7 @@ coverage/
 *.cover
 *.coverage
 *.cov
+htmlcov/
 
 # Misc
 *.swp
@@ -47,6 +52,7 @@ coverage/
 
 # Ignore local config
 config/local_*.yml
+config/secrets/
 
 # Ignore compiled web assets
 web-static/
