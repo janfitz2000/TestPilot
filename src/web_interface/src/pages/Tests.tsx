@@ -1,5 +1,7 @@
-import React from 'react';
-import { Play, CheckCircle, XCircle, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, CheckCircle, XCircle, Clock, Plus, Eye, Download, Settings } from 'lucide-react';
+import TestRecorder from '../components/TestRecorder';
+import ChatInterface from '../components/ChatInterface';
 
 const mockTests = [
   { id: 1, name: 'Power Amplifier Test', status: 'running', progress: 65, startTime: '10:30 AM', duration: '15 min' },
@@ -39,17 +41,76 @@ const getStatusColor = (status: string) => {
 };
 
 export default function Tests() {
+  const [activeView, setActiveView] = useState<'list' | 'recorder' | 'ai'>('list');
+
+  if (activeView === 'recorder') {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="flex-shrink-0 border-b border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setActiveView('list')}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              ← Back to Tests
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">Test Recorder & Real-time Plotter</h1>
+            <div className="w-20"></div>
+          </div>
+        </div>
+        <div className="flex-1">
+          <TestRecorder />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'ai') {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="flex-shrink-0 border-b border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setActiveView('list')}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              ← Back to Tests
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">AI Test Assistant</h1>
+            <div className="w-20"></div>
+          </div>
+        </div>
+        <div className="flex-1">
+          <ChatInterface />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Test Executions</h1>
-          <p className="mt-2 text-gray-600">Monitor and manage test executions</p>
+          <h1 className="text-3xl font-bold text-gray-900">Test Management</h1>
+          <p className="mt-2 text-gray-600">Execute tests with AI assistance and real-time recording</p>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
-          <Play className="w-4 h-4 mr-2" />
-          Run Test
-        </button>
+        
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setActiveView('ai')}
+            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            AI Assistant
+          </button>
+          <button
+            onClick={() => setActiveView('recorder')}
+            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Play className="w-4 h-4 mr-2" />
+            Start Recording
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -89,13 +150,49 @@ export default function Tests() {
                     </div>
                   </div>
                   
-                  <button className="text-gray-400 hover:text-gray-600">
+                  <button 
+                    onClick={() => setActiveView('recorder')}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
                     <Play className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Quick Info Panels */}
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+          <h3 className="text-lg font-semibold mb-2">Real-time Recording</h3>
+          <p className="text-sm opacity-90 mb-4">Record measurements with live plotting and data export</p>
+          <button 
+            onClick={() => setActiveView('recorder')}
+            className="bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-50"
+          >
+            Start Recording
+          </button>
+        </div>
+        
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-6 text-white">
+          <h3 className="text-lg font-semibold mb-2">AI Test Assistant</h3>
+          <p className="text-sm opacity-90 mb-4">Generate test plans and analyze results with AI</p>
+          <button 
+            onClick={() => setActiveView('ai')}
+            className="bg-white text-purple-600 px-4 py-2 rounded font-medium hover:bg-purple-50"
+          >
+            Open AI Chat
+          </button>
+        </div>
+        
+        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-6 text-white">
+          <h3 className="text-lg font-semibold mb-2">Data Output Format</h3>
+          <p className="text-sm opacity-90 mb-4">Export data in JSON, CSV, or custom formats for LLM consumption</p>
+          <button className="bg-white text-green-600 px-4 py-2 rounded font-medium hover:bg-green-50">
+            Configure Format
+          </button>
         </div>
       </div>
     </div>

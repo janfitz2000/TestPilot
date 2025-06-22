@@ -6,13 +6,18 @@ WORKDIR /app
 COPY src/web_interface/package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
-# Copy source code
-COPY src/web_interface/ ./
+# Copy source code (excluding node_modules)
+COPY src/web_interface/src ./src
+COPY src/web_interface/public ./public
+COPY src/web_interface/tsconfig.json ./
+COPY src/web_interface/tailwind.config.js ./
+COPY src/web_interface/postcss.config.js ./
 
-# Create non-root user
-RUN addgroup -g 1000 testpilot && adduser -D -s /bin/sh -u 1000 -G testpilot testpilot
+# Create non-root user (handle existing group gracefully)
+RUN addgroup -g 1001 testpilot || addgroup testpilot
+RUN adduser -D -s /bin/sh -u 1001 -G testpilot testpilot
 RUN chown -R testpilot:testpilot /app
 USER testpilot
 

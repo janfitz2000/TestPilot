@@ -1,6 +1,47 @@
-# AI-Driven Test Automation Platform Analysis and claude.md
+# TestPilot AI-Driven Test Automation Platform
 
-## Comprehensive claude.md File
+## 🎯 LATEST SESSION UPDATE (Jan 15, 2025)
+
+### ✅ **MAJOR BREAKTHROUGH - System Now Working as Intended!**
+
+**What We Achieved:**
+- ✅ **Google Gemini AI Integration** - Real AI responses, not mock data
+- ✅ **Execution-Focused Backend** - AI now EXECUTES tests instead of describing them  
+- ✅ **Real-time Test Recorder** - Live plotting with Chart.js, configurable sample rates
+- ✅ **Mermaid Diagram Auto-Rendering** - Visual test flows generated and displayed
+- ✅ **Complete Web Interface** - Chat + Tests page + Recording functionality
+
+**Current Status:**
+- **Website:** http://localhost:3010 ✅ Working (Containerized)
+- **AI Backend:** http://localhost:8010 ✅ Executing tests with Gemini (Containerized)
+- **Test Execution:** Real SCPI commands + scientific analysis ✅
+- **Data Export:** JSON format optimized for LLM consumption ✅
+
+## 🔒 **CRITICAL CONTAINER REQUIREMENT**
+
+**⚠️ MANDATORY: ALL DEVELOPMENT MUST BE CONTAINER-BASED ⚠️**
+
+**NEVER install packages directly on the host machine. ALL operations must be containerized:**
+- ❌ NO `npm install` on host
+- ❌ NO `pip install` on host  
+- ❌ NO `cargo build` on host
+- ✅ ALL changes via Dockerfile updates
+- ✅ ALL dependencies managed via container images
+- ✅ ALL services running in Docker containers
+
+**Container-First Development:**
+- Modify `package.json` and rebuild container images
+- Use `docker exec` for container-internal operations
+- Update Dockerfiles for new dependencies
+- Use `docker-compose` for all service orchestration
+
+**Key Files:** `SESSION_SUMMARY.md` has full details of achievements and next steps.
+
+**Ready to Test:** Try "Test a WiFi amplifier" in the chat - it will execute immediately with mermaid diagrams!
+
+---
+
+## Original Platform Documentation
 
 Based on my research into Claude Code best practices and the specific requirements of this AI-driven test automation platform, here's a comprehensive claude.md file:
 

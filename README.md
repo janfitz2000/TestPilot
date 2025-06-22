@@ -82,8 +82,12 @@ TestPilot provides two alternative stacks for development and demonstration:
 ### Port Differences
 - The simple stack maps Postgres to port 5434 (not 5432). Update your connection strings if switching between stacks.
 
-### React Proxy Limitation
-- The React app's `proxy` setting only supports forwarding to one backend (AI Orchestrator at :8001). For calls to other services (e.g., Instrument Gateway), use full URLs or set up a custom proxy.
+### React Proxy Configuration
+- The React app includes a custom proxy configuration (`src/web_interface/src/setupProxy.js`) that routes API calls to the appropriate backend services:
+  - `/api/ai/*` → AI Orchestrator (port 8001)
+  - `/api/instruments/*` → Instrument Gateway (port 8002)
+  - `/api/workflows/*` → Workflow Engine (port 8003)
+  - `/api/data/*` → Data Pipeline (port 8004)
 
 ## 🔧 Development
 

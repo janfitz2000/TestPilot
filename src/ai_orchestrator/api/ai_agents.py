@@ -3,7 +3,7 @@ from typing import Dict, Any
 import logging
 
 from core.ai_client import AIClient
-from core.vector_store import VectorStore
+# from core.vector_store import VectorStore  # Temporarily disabled
 from schemas.ai_agent import TestPlanRequest, TestPlanResponse, OptimizationRequest
 
 logger = logging.getLogger(__name__)
@@ -17,10 +17,11 @@ async def generate_test_plan(
     """Generate test plan from natural language description"""
     try:
         ai_client: AIClient = app_request.app.state.ai_client
-        vector_store: VectorStore = app_request.app.state.vector_store
+        # vector_store: VectorStore = app_request.app.state.vector_store  # Temporarily disabled
         
         # Retrieve relevant documentation
-        context = await vector_store.search_similar(request.description, limit=5)
+        # context = await vector_store.search_similar(request.description, limit=5)  # Temporarily disabled
+        context = []
         
         # Generate test plan
         test_plan = await ai_client.generate_test_plan(

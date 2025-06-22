@@ -1,0 +1,128 @@
+# TestPilot Prometheus Alert Rules
+groups:
+  - name: testpilot.rules
+    rules:
+      # Service availability alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "TestPilot service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 30 seconds."
+
+      - alert: AIServiceUnhealthy
+        expr: testpilot_ai_model_health == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AI model is unhealthy"
+          description: "The AI model in the orchestrator is not responding or failed to initialize."
+
+      # Performance alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, testpilot_ai_request_duration_seconds_bucket) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High AI response time"
+          description: "95th percentile AI response time is {{ $value }}s, which exceeds 5s threshold."
+
+      - alert: HighErrorRate
+        expr: rate(testpilot_test_executions_total{status="failure"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High test failure rate"
+          description: "Test failure rate is {{ $value | humanizePercentage }}, exceeding 10% threshold."
+
+      # Resource utilization alerts
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage in {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | humanizePercentage }} of its memory limit."
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage in {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | humanizePercentage }} CPU for more than 5 minutes."
+
+      # Database alerts
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_database_numbackends > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connections"
+          description: "Database {{ $labels.datname }} has {{ $value }} active connections."
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk {{ $labels.mountpoint }} has only {{ $value | humanizePercentage }} space remaining."
+
+      # Test execution alerts
+      - alert: TooManyActiveTests
+        expr: testpilot_active_tests > 50
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Too many active tests"
+          description: "There are {{ $value }} active tests, which may indicate resource constraints."
+
+      - alert: NoTestActivity
+        expr: increase(testpilot_test_executions_total[1h]) == 0
+        for: 1h
+        labels:
+          severity: info
+        annotations:
+          summary: "No test activity"
+          description: "No tests have been executed in the last hour."
+
+  - name: testpilot.instrument.rules
+    rules:
+      # Instrument-specific alerts
+      - alert: InstrumentConnectionLost
+        expr: increase(instrument_connection_errors_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Instrument connection issues"
+          description: "More than 5 instrument connection errors in the last 5 minutes."
+
+      - alert: SCPICommandTimeout
+        expr: increase(scpi_command_timeouts_total[5m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SCPI command timeouts"
+          description: "More than 3 SCPI command timeouts in the last 5 minutes."
+
+      - alert: InstrumentCalibrationExpired
+        expr: time() - instrument_last_calibration_timestamp > 86400
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Instrument calibration expired"
+          description: "Instrument {{ $labels.instrument_id }} calibration is more than 24 hours old."

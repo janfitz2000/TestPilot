@@ -3,7 +3,7 @@ use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 use crate::instrument::InstrumentConnection;
 

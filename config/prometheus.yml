@@ -1,46 +1,84 @@
+# Prometheus configuration for TestPilot monitoring
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+  external_labels:
+    cluster: 'testpilot'
+    environment: 'production'
 
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
 
 scrape_configs:
+  # Prometheus itself
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
+  # TestPilot AI Orchestrator
   - job_name: 'ai-orchestrator'
     static_configs:
       - targets: ['ai-orchestrator:8000']
     metrics_path: '/metrics'
-    scrape_interval: 30s
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
 
+  # TestPilot Instrument Gateway
   - job_name: 'instrument-gateway'
     static_configs:
       - targets: ['instrument-gateway:8000']
     metrics_path: '/metrics'
-    scrape_interval: 30s
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
 
-  - job_name: 'workflow-engine'
-    static_configs:
-      - targets: ['workflow-engine:8000']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-
-  - job_name: 'data-pipeline'
-    static_configs:
-      - targets: ['data-pipeline:8000']
-    metrics_path: '/metrics'
-    scrape_interval: 30s
-
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['postgres:5432']
-    scrape_interval: 30s
-
+  # Redis with custom metrics
   - job_name: 'redis'
     static_configs:
       - targets: ['redis:6379']
-    scrape_interval: 30s
+    scrape_interval: 15s
+
+  # PostgreSQL
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 15s
+
+  # TimescaleDB
+  - job_name: 'timescaledb'
+    static_configs:
+      - targets: ['timescaledb:5432']
+    scrape_interval: 15s
+
+  # NATS messaging
+  - job_name: 'nats'
+    static_configs:
+      - targets: ['nats:8222']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Qdrant Vector Database
+  - job_name: 'qdrant'
+    static_configs:
+      - targets: ['qdrant:6333']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Node Exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # cAdvisor for container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s

@@ -32,7 +32,6 @@ impl Instrument {
     }
 }
 
-#[derive(Clone)]
 pub struct InstrumentManager {
     pub instruments: HashMap<Uuid, Instrument>,
     pub connections: HashMap<Uuid, Box<dyn InstrumentConnection>>,
@@ -70,7 +69,7 @@ impl InstrumentManager {
         info!("Connecting to instrument: {}", instrument.name);
 
         // Create connection based on protocol
-        let mut connection: Box<dyn InstrumentConnection> = match instrument.protocol.as_str() {
+        let connection: Box<dyn InstrumentConnection> = match instrument.protocol.as_str() {
             "SCPI" => Box::new(ScpiClient::new(&instrument.address)?),
             _ => return Err(anyhow!("Unsupported protocol: {}", instrument.protocol)),
         };
@@ -104,7 +103,7 @@ impl InstrumentManager {
 
         info!("Disconnecting instrument: {}", instrument.name);
 
-        if let Some(mut connection) = self.connections.remove(id) {
+        if let Some(connection) = self.connections.remove(id) {
             if let Err(e) = connection.disconnect().await {
                 warn!("Error during disconnect: {}", e);
             }
